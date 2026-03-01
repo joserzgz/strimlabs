@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+:root {
+  --purple:   #8B2BE2;
+  --cyan:     #00E5FF;
+  --cyan-dim: #00B8CC;
+  --bg:       #0D0F14;
+  --bg2:      #12151C;
+  --surface:  #181C26;
+  --surface2: #1E2230;
+  --border:   rgba(0,229,255,0.12);
+  --border2:  rgba(0,229,255,0.25);
+  --text:     #E8EAF0;
+  --muted:    #4A5270;
+  --red:      #EF4444;
+  --yellow:   #F59E0B;
+  --green:    #10B981;
+  --gradient:        linear-gradient(90deg, #8B2BE2, #00E5FF);
+  --gradient-135:    linear-gradient(135deg, #8B2BE2, #00E5FF);
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); }

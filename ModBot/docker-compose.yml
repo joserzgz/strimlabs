@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sl-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./api
+    container_name: sl-api-dev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  twitch-bot:
+    build:
+      context: ./bot
+      dockerfile: twitch/Dockerfile
+    container_name: sl-twitch-bot-dev
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./bot/twitch:/app/twitch
+      - ./bot/moderation:/app/moderation
+    depends_on:
+      - api
+
+  discord-bot:
+    build:
+      context: ./bot
+      dockerfile: discord/Dockerfile
+    container_name: sl-discord-bot-dev
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./bot/discord:/app/discord_bot
+      - ./bot/moderation:/app/moderation
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
