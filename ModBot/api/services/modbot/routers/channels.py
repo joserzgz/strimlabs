@@ -1,15 +1,24 @@
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlencode
+
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func
 
-from db.base import async_session
-from db.models import User, Channel, Platform
-from plan_limits import get_limits
-from routers.auth import get_current_user
+from core.db import async_session, User, Platform
+from core.auth.deps import get_current_user
+from core.plan_limits import get_limits
+from services.modbot.models import Channel
 
 router = APIRouter()
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "")
+DISCORD_BOT_REDIRECT_URI = os.getenv("DISCORD_BOT_REDIRECT_URI", "")
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
+DISCORD_API = "https://discord.com/api/v10"
 
 
 class ChannelCreate(BaseModel):
@@ -152,6 +161,59 @@ async def check_quota(channel_id: int):
         user.messages_this_month += 1
         await session.commit()
     return {"allowed": True, "plan": user.plan}
+
+
+# ── Discord Bot invite (requires JWT) ───────────────────────
+
+@router.get("/discord-bot")
+async def discord_bot_redirect(user: User = Depends(get_current_user)):
+    permissions = 1 << 1 | 1 << 2 | 1 << 13 | 1 << 40  # BAN, KICK, MANAGE_MESSAGES, MODERATE_MEMBERS
+    params = urlencode({
+        "client_id": DISCORD_CLIENT_ID,
+        "redirect_uri": DISCORD_BOT_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "bot identify",
+        "permissions": str(permissions),
+    })
+    return {"url": f"https://discord.com/oauth2/authorize?{params}"}
+
+
+@router.get("/discord-bot/callback")
+async def discord_bot_callback(
+    code: str = Query(None),
+    guild_id: str = Query(None),
+    user: User = Depends(get_current_user),
+):
+    if not guild_id:
+        raise HTTPException(400, "No guild_id returned from Discord")
+
+    # Fetch guild info via bot token
+    guild_name = f"guild-{guild_id}"
+    if DISCORD_BOT_TOKEN:
+        try:
+            async with aiohttp.ClientSession() as http:
+                resp = await http.get(
+                    f"{DISCORD_API}/guilds/{guild_id}",
+                    headers={"Authorization": f"Bot {DISCORD_BOT_TOKEN}"},
+                )
+                if resp.status == 200:
+                    data = await resp.json()
+                    guild_name = data.get("name", guild_name)
+        except Exception:
+            pass
+
+    async with async_session() as session:
+        channel = Channel(
+            user_id=user.id,
+            platform=Platform.discord,
+            channel_name=guild_name,
+            discord_guild_id=guild_id,
+            is_active=True,
+        )
+        session.add(channel)
+        await session.commit()
+
+    return {"redirect": f"{FRONTEND_URL}/channels"}
 
 
 def _channel_dict(c: Channel) -> dict:

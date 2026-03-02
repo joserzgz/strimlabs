@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func, desc
 
-from db.base import async_session
-from db.models import User, Channel, ModActionLog
-from routers.auth import get_current_user
+from core.db import async_session, User
+from core.auth.deps import get_current_user
+from services.modbot.models import Channel, ModActionLog
 
 router = APIRouter()
 

@@ -1,21 +1,17 @@
 import os
-from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import aiohttp
 import bcrypt
-import jwt
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from db.base import async_session
-from db.models import User, LinkedAccount, Platform
+from core.db import async_session, User, LinkedAccount, Platform
+from core.auth.deps import create_jwt, get_current_user
 
 router = APIRouter()
 
-JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret")
-JWT_EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", "8"))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
 
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID", "")
@@ -25,33 +21,6 @@ TWITCH_REDIRECT_URI = os.getenv("TWITCH_REDIRECT_URI", "")
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "")
 DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI", "")
-DISCORD_BOT_REDIRECT_URI = os.getenv("DISCORD_BOT_REDIRECT_URI", "")
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
-
-
-def create_jwt(user_id: int) -> str:
-    payload = {
-        "sub": user_id,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
-
-
-async def get_current_user(request: Request) -> User:
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HTTPException(401, "Missing token")
-    token = auth_header[7:]
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    except jwt.PyJWTError:
-        raise HTTPException(401, "Invalid token")
-
-    async with async_session() as session:
-        user = await session.get(User, payload["sub"])
-        if not user:
-            raise HTTPException(401, "User not found")
-        return user
 
 
 # ── Twitch OAuth ─────────────────────────────────────────────
@@ -234,60 +203,6 @@ async def discord_callback(code: str = Query(...)):
 
         jwt_token = create_jwt(user.id)
     return {"redirect": f"{FRONTEND_URL}/dashboard?token={jwt_token}"}
-
-
-# ── Discord Bot invite (requires existing JWT) ──────────────
-
-@router.get("/discord/bot")
-async def discord_bot_redirect(user: User = Depends(get_current_user)):
-    permissions = 1 << 1 | 1 << 2 | 1 << 13 | 1 << 40  # BAN, KICK, MANAGE_MESSAGES, MODERATE_MEMBERS
-    params = urlencode({
-        "client_id": DISCORD_CLIENT_ID,
-        "redirect_uri": DISCORD_BOT_REDIRECT_URI,
-        "response_type": "code",
-        "scope": "bot identify",
-        "permissions": str(permissions),
-    })
-    return {"url": f"https://discord.com/oauth2/authorize?{params}"}
-
-
-@router.get("/discord/bot/callback")
-async def discord_bot_callback(
-    code: str = Query(None),
-    guild_id: str = Query(None),
-    user: User = Depends(get_current_user),
-):
-    if not guild_id:
-        raise HTTPException(400, "No guild_id returned from Discord")
-
-    # Fetch guild info via bot token
-    guild_name = f"guild-{guild_id}"
-    if DISCORD_BOT_TOKEN:
-        try:
-            async with aiohttp.ClientSession() as http:
-                resp = await http.get(
-                    f"{DISCORD_API}/guilds/{guild_id}",
-                    headers={"Authorization": f"Bot {DISCORD_BOT_TOKEN}"},
-                )
-                if resp.status == 200:
-                    data = await resp.json()
-                    guild_name = data.get("name", guild_name)
-        except Exception:
-            pass
-
-    from db.models import Channel
-    async with async_session() as session:
-        channel = Channel(
-            user_id=user.id,
-            platform=Platform.discord,
-            channel_name=guild_name,
-            discord_guild_id=guild_id,
-            is_active=True,
-        )
-        session.add(channel)
-        await session.commit()
-
-    return {"redirect": f"{FRONTEND_URL}/channels"}
 
 
 # ── Me & Admin ───────────────────────────────────────────────
