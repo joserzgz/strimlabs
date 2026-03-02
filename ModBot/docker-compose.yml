@@ -17,14 +17,14 @@ services:
       retries: 10
 
   api:
-    build: ./api
+    build: ../api
     container_name: sl-api-dev
     restart: unless-stopped
     env_file: .env
     ports:
       - "8000:8000"
     volumes:
-      - ./api:/app
+      - ../api:/app
     depends_on:
       postgres:
         condition: service_healthy
