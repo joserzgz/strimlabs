@@ -13,55 +13,60 @@ Internet
    ▼
 Plesk (nginx reverse proxy + SSL automático)
    │
-   ├── strimlabs.com       → 127.0.0.1:3000  (contenedor: sl-landing)
-   └── app.strimlabs.com   → 127.0.0.1:3001  (contenedor: sl-modbot-web)
+   ├── strimlabs.com       → 127.0.0.1:3300  (contenedor: sl_prod_landing)
+   └── app.strimlabs.com   → 127.0.0.1:3301  (contenedor: sl_prod_web)
                                  │
-                                 └── /api/* → sl-api:8000 (red Docker interna)
+                                 └── /api/* → sl_prod_api:8000 (red Docker interna)
                                                 │
-                                                └── sl-postgres:5432 (red Docker interna)
+                                                └── sl_prod_postgres:5432 (red Docker interna)
 
-   sl-twitch-bot  ──→ sl-api:8000 (red Docker interna)
-   sl-discord-bot ──→ sl-api:8000 (red Docker interna)
+   sl_prod_twitch_bot  ──→ sl_prod_api:8000 (red Docker interna)
+   sl_prod_discord_bot ──→ sl_prod_api:8000 (red Docker interna)
 ```
 
 ### Contenedores
 
-| Contenedor       | Imagen                | Puerto expuesto     | Función                        |
-|------------------|-----------------------|---------------------|--------------------------------|
-| sl-postgres      | postgres:16-alpine    | — (solo interno)    | Base de datos                  |
-| sl-api           | python:3.12-slim      | — (solo interno)    | FastAPI (2 workers)            |
-| sl-twitch-bot    | python:3.12-slim      | —                   | Bot moderación Twitch          |
-| sl-discord-bot   | python:3.12-slim      | —                   | Bot moderación Discord         |
-| sl-landing       | nginx:alpine          | 127.0.0.1:3000      | Landing page (strimlabs.com)   |
-| sl-modbot-web    | nginx:alpine          | 127.0.0.1:3001      | Dashboard + proxy API          |
+| Contenedor          | Imagen             | Puerto expuesto      | Función                      |
+|---------------------|--------------------|----------------------|------------------------------|
+| sl_prod_postgres    | postgres:16-alpine | — (solo interno)     | Base de datos                |
+| sl_prod_api         | python:3.12-slim   | — (solo interno)     | FastAPI (2 workers)          |
+| sl_prod_twitch_bot  | python:3.12-slim   | —                    | Bot moderación Twitch        |
+| sl_prod_discord_bot | python:3.12-slim   | —                    | Bot moderación Discord       |
+| sl_prod_landing     | nginx:alpine       | 127.0.0.1:3300       | Landing page (strimlabs.com) |
+| sl_prod_web         | nginx:alpine       | 127.0.0.1:3301       | Dashboard + proxy API        |
+
+### Contenedores existentes en el servidor (no se tocan)
+
+| Contenedor       | Puerto              |
+|------------------|---------------------|
+| cg_qa_api        | 127.0.0.1:3102      |
+| cg_qa_frontend   | 127.0.0.1:3103      |
+| cg_qa_landing    | 127.0.0.1:3104      |
+| tp_qa_api        | 127.0.0.1:3109      |
+| tp_qa_frontend   | 127.0.0.1:3110      |
+| si_prod_www      | 127.0.0.1:3201      |
+| portainer        | 127.0.0.1:9000      |
+
+> Strimlabs usa el rango **33xx** para evitar conflictos.
 
 ---
 
-## Paso 1 — Instalar Docker en el servidor
+## Paso 1 — Verificar Docker en el servidor
 
-Conéctate por SSH al servidor:
+Docker ya debería estar instalado (Plesk lo usa). Conéctate por SSH y verifica:
 
 ```bash
 ssh root@TU_IP
-```
 
-Instalar Docker CE (si no está instalado via Plesk):
-
-```bash
-# Instalar Docker oficial
-curl -fsSL https://get.docker.com | sh
-
-# Habilitar para que arranque con el sistema
-systemctl enable docker
-systemctl start docker
-
-# Verificar
 docker --version
 docker compose version
 ```
 
-> **Nota:** Si Plesk ya tiene la extensión Docker instalada, Docker ya estará disponible.
-> Solo verifica que `docker compose` (v2) funcione.
+Si `docker compose` (v2) no funciona:
+
+```bash
+apt update && apt install -y docker-compose-plugin
+```
 
 ---
 
@@ -83,11 +88,11 @@ dig +short app.strimlabs.com
 
 ---
 
-## Paso 3 — Crear subdominios en Plesk
+## Paso 3 — Crear subdominio en Plesk
 
 ### 3.1 — Dominio principal: strimlabs.com
 
-Este ya debería estar configurado. Solo necesitamos asegurarnos de que el proxy esté correctamente configurado (se hace en el Paso 6).
+Ya está configurado en Plesk. El proxy se configura en el Paso 7.
 
 ### 3.2 — Subdominio: app.strimlabs.com
 
@@ -105,7 +110,7 @@ Este ya debería estar configurado. Solo necesitamos asegurarnos de que el proxy
 
 ```bash
 cd /opt
-git clone TU_REPO_URL strimlabs
+git clone https://github.com/joserzgz/strimlabs.git strimlabs
 cd /opt/strimlabs
 ```
 
@@ -131,7 +136,7 @@ cp .env.production .env
 nano .env
 ```
 
-### Valores importantes a configurar:
+### Valores importantes a generar:
 
 ```bash
 # Genera password de PostgreSQL
@@ -150,7 +155,8 @@ openssl rand -hex 32
 ```
 FRONTEND_URL=https://app.strimlabs.com
 API_URL=https://app.strimlabs.com/api
-API_BASE=http://sl-api:8000
+API_BASE=http://sl_prod_api:8000
+POSTGRES_HOST=sl_prod_postgres
 TWITCH_REDIRECT_URI=https://app.strimlabs.com/api/auth/twitch/callback
 DISCORD_REDIRECT_URI=https://app.strimlabs.com/api/auth/discord/callback
 DISCORD_BOT_REDIRECT_URI=https://app.strimlabs.com/api/channels/discord-bot/callback
@@ -177,28 +183,29 @@ docker compose -f docker-compose.prod.yml ps
 Deberías ver 6 contenedores en estado "Up":
 
 ```
-sl-postgres     running (healthy)
-sl-api          running
-sl-twitch-bot   running
-sl-discord-bot  running
-sl-landing      running    0.0.0.0:3000->80/tcp
-sl-modbot-web   running    0.0.0.0:3001->80/tcp
+NAME                  STATUS              PORTS
+sl_prod_postgres      running (healthy)
+sl_prod_api           running
+sl_prod_twitch_bot    running
+sl_prod_discord_bot   running
+sl_prod_landing       running             127.0.0.1:3300->80/tcp
+sl_prod_web           running             127.0.0.1:3301->80/tcp
 ```
 
 ### Verificar manualmente:
 
 ```bash
-# Health check del API
-curl http://127.0.0.1:3001/api/health
+# Health check del API (a través del proxy interno del contenedor web)
+curl http://127.0.0.1:3301/api/health
 # → {"status":"ok"}
 
 # Landing page
-curl -s http://127.0.0.1:3000 | head -5
+curl -s http://127.0.0.1:3300 | head -5
 
 # Ver logs
-docker logs sl-api
-docker logs sl-twitch-bot
-docker logs sl-discord-bot
+docker logs sl_prod_api
+docker logs sl_prod_twitch_bot
+docker logs sl_prod_discord_bot
 ```
 
 ---
@@ -216,7 +223,7 @@ Plesk manejará el SSL y redirigirá el tráfico a los contenedores Docker.
 
 ```nginx
 location / {
-    proxy_pass http://127.0.0.1:3000;
+    proxy_pass http://127.0.0.1:3300;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -235,7 +242,7 @@ location / {
 
 ```nginx
 location / {
-    proxy_pass http://127.0.0.1:3001;
+    proxy_pass http://127.0.0.1:3301;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -247,11 +254,11 @@ location / {
 
 4. Click **OK** / **Apply**
 
-> **Nota:** El contenedor `sl-modbot-web` ya tiene nginx interno que:
+> **Nota:** El contenedor `sl_prod_web` ya tiene nginx interno que:
 > - Sirve los archivos estáticos del SPA
-> - Proxea `/api/*` al contenedor `sl-api` por la red interna Docker
+> - Proxea `/api/*` al contenedor `sl_prod_api` por la red interna Docker
 >
-> Plesk solo necesita proxear todo el tráfico al puerto 3001.
+> Plesk solo necesita proxear todo el tráfico al puerto 3301.
 
 ---
 
@@ -333,7 +340,7 @@ curl -I https://strimlabs.com
 ./deploy.sh logs discord-bot
 
 # Base de datos
-docker exec sl-postgres psql -U strimlabs -c "SELECT count(*) FROM users;"
+docker exec sl_prod_postgres psql -U strimlabs -c "SELECT count(*) FROM users;"
 ```
 
 Abre en el navegador:
@@ -394,7 +401,7 @@ Agregar esta línea:
 ./deploy.sh stop
 ```
 
-> Los datos de PostgreSQL se conservan en el volumen Docker `pgdata`.
+> Los datos de PostgreSQL se conservan en el volumen Docker `sl_prod_pgdata`.
 
 ---
 
@@ -403,7 +410,7 @@ Agregar esta línea:
 ```bash
 # Descomprimir y restaurar
 gunzip -c backups/strimlabs_20260302_030000.sql.gz | \
-  docker exec -i sl-postgres psql -U strimlabs strimlabs
+  docker exec -i sl_prod_postgres psql -U strimlabs strimlabs
 ```
 
 ---
@@ -411,33 +418,49 @@ gunzip -c backups/strimlabs_20260302_030000.sql.gz | \
 ## Troubleshooting
 
 ### Los contenedores no arrancan
+
 ```bash
 docker compose -f docker-compose.prod.yml logs
 ```
 
 ### La API no responde
+
 ```bash
-docker logs sl-api
+docker logs sl_prod_api
 # Verificar que PostgreSQL está healthy
-docker exec sl-postgres pg_isready -U strimlabs
+docker exec sl_prod_postgres pg_isready -U strimlabs
 ```
 
 ### El bot de Twitch no se conecta
+
 ```bash
-docker logs sl-twitch-bot
+docker logs sl_prod_twitch_bot
 # Verificar que TWITCH_BOT_TOKEN es válido
 # Verificar que la API responde internamente
-docker exec sl-twitch-bot curl -s http://sl-api:8000/api/health
+docker exec sl_prod_twitch_bot curl -s http://sl_prod_api:8000/api/health
 ```
 
 ### Error 502 Bad Gateway en Plesk
-- Verificar que los contenedores están corriendo: `docker ps`
-- Verificar que los puertos están escuchando: `ss -tlnp | grep -E '3000|3001'`
+
+- Verificar que los contenedores están corriendo: `docker ps | grep sl_prod`
+- Verificar que los puertos están escuchando: `ss -tlnp | grep -E '3300|3301'`
 - Verificar los logs de nginx de Plesk: `/var/log/nginx/error.log`
 
 ### Reconstruir desde cero (sin perder datos)
+
 ```bash
 cd /opt/strimlabs
 docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d --build --force-recreate
 ```
+
+---
+
+## Referencia rápida de puertos
+
+| Proyecto         | Rango  | Contenedores                       |
+|------------------|--------|------------------------------------|
+| Control Gastos   | 31xx   | cg_qa_api, cg_qa_frontend, cg_qa_landing |
+| TechPro AI       | 31xx   | tp_qa_api, tp_qa_frontend          |
+| SIEM Web         | 32xx   | si_prod_www                        |
+| **Strimlabs**    | **33xx** | **sl_prod_landing, sl_prod_web** |

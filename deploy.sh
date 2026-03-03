@@ -5,6 +5,9 @@ set -euo pipefail
 #  Strimlabs — Deploy script (Plesk + Docker)
 # ═══════════════════════════════════════════════════════════════
 #  Usage: ./deploy.sh [start|update|stop|logs|backup]
+#
+#  Contenedores: sl_prod_{postgres,api,twitch_bot,discord_bot,landing,web}
+#  Puertos:      127.0.0.1:3300 (landing), 127.0.0.1:3301 (web)
 # ═══════════════════════════════════════════════════════════════
 
 COMPOSE="docker compose -f docker-compose.prod.yml"
@@ -33,19 +36,19 @@ case "${1:-help}" in
     sleep 5
 
     # Verificar health
-    if curl -sf http://127.0.0.1:3001/api/health > /dev/null 2>&1; then
+    if curl -sf http://127.0.0.1:3301/api/health > /dev/null 2>&1; then
       echo "  ✓ API respondiendo correctamente"
     else
       echo "  ! La API aún está iniciando. Verifica con:"
-      echo "    docker logs sl-api"
+      echo "    docker logs sl_prod_api"
     fi
 
     echo ""
     echo "══════════════════════════════════════════════"
     echo "  Servicios iniciados."
-    echo "  Landing:   http://127.0.0.1:3000"
-    echo "  Dashboard: http://127.0.0.1:3001"
-    echo "  API:       http://127.0.0.1:3001/api/health"
+    echo "  Landing:   http://127.0.0.1:3300"
+    echo "  Dashboard: http://127.0.0.1:3301"
+    echo "  API:       http://127.0.0.1:3301/api/health"
     echo ""
     echo "  Configura el proxy reverso en Plesk"
     echo "  para strimlabs.com y app.strimlabs.com"
@@ -98,9 +101,9 @@ case "${1:-help}" in
     $COMPOSE ps
     echo ""
     echo "── Health check ──"
-    curl -sf http://127.0.0.1:3001/api/health 2>/dev/null && echo " API: OK" || echo " API: DOWN"
-    curl -sf http://127.0.0.1:3000 > /dev/null 2>&1 && echo " Landing: OK" || echo " Landing: DOWN"
-    curl -sf http://127.0.0.1:3001 > /dev/null 2>&1 && echo " Dashboard: OK" || echo " Dashboard: DOWN"
+    curl -sf http://127.0.0.1:3301/api/health 2>/dev/null && echo " API: OK" || echo " API: DOWN"
+    curl -sf http://127.0.0.1:3300 > /dev/null 2>&1 && echo " Landing: OK" || echo " Landing: DOWN"
+    curl -sf http://127.0.0.1:3301 > /dev/null 2>&1 && echo " Dashboard: OK" || echo " Dashboard: DOWN"
     ;;
 
   backup)
@@ -110,7 +113,7 @@ case "${1:-help}" in
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="$BACKUP_DIR/strimlabs_${TIMESTAMP}.sql.gz"
 
-    docker exec sl-postgres pg_dump -U "${POSTGRES_USER:-strimlabs}" "${POSTGRES_DB:-strimlabs}" \
+    docker exec sl_prod_postgres pg_dump -U "${POSTGRES_USER:-strimlabs}" "${POSTGRES_DB:-strimlabs}" \
       | gzip > "$BACKUP_FILE"
 
     echo "  Backup guardado en: $BACKUP_FILE"
