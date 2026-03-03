@@ -1,0 +1,111 @@
+# ═══════════════════════════════════════════════════════════════
+#  Strimlabs — Docker Compose Production (Plesk + reverse proxy)
+# ═══════════════════════════════════════════════════════════════
+#  Plesk maneja SSL y proxy reverso hacia los contenedores.
+#  Los frontends exponen puertos en 127.0.0.1 (solo localhost).
+#
+#  strimlabs.com       → 127.0.0.1:3000 (landing)
+#  app.strimlabs.com   → 127.0.0.1:3001 (modbot-web + /api/ proxy)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Base de datos ──────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: sl-postgres
+    restart: always
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 10
+    networks:
+      - internal
+
+  # ── API (FastAPI) ──────────────────────────────
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    container_name: sl-api
+    restart: always
+    env_file: .env
+    environment:
+      POSTGRES_HOST: sl-postgres
+      API_BASE: http://sl-api:8000
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ── Twitch Bot ─────────────────────────────────
+  twitch-bot:
+    build:
+      context: ./ModBot/bot
+      dockerfile: twitch/Dockerfile.prod
+    container_name: sl-twitch-bot
+    restart: always
+    env_file: .env
+    environment:
+      API_BASE: http://sl-api:8000
+    depends_on:
+      - api
+    networks:
+      - internal
+
+  # ── Discord Bot ────────────────────────────────
+  discord-bot:
+    build:
+      context: ./ModBot/bot
+      dockerfile: discord/Dockerfile.prod
+    container_name: sl-discord-bot
+    restart: always
+    env_file: .env
+    environment:
+      API_BASE: http://sl-api:8000
+    depends_on:
+      - api
+    networks:
+      - internal
+
+  # ── Landing page (strimlabs.com) ───────────────
+  landing:
+    build:
+      context: .
+      dockerfile: landing/Dockerfile.prod
+    container_name: sl-landing
+    restart: always
+    ports:
+      - "127.0.0.1:3000:80"
+    networks:
+      - internal
+
+  # ── ModBot Dashboard (app.strimlabs.com) ───────
+  modbot-web:
+    build:
+      context: .
+      dockerfile: ModBot/web/Dockerfile.prod
+    container_name: sl-modbot-web
+    restart: always
+    ports:
+      - "127.0.0.1:3001:80"
+    depends_on:
+      - api
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge

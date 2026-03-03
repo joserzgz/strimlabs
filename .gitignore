@@ -19,6 +19,12 @@ build/
 .env.local
 .env.*.local
 
+# Backups
+backups/
+
+# Nginx (generated)
+nginx/active.conf
+
 # Build outputs
 dist/
 build/

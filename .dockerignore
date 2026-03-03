@@ -1,0 +1,14 @@
+node_modules
+.git
+.env
+.env.*
+__pycache__
+*.pyc
+*.pyo
+dist
+.claude
+backups
+*.md
+!README.md
+.vscode
+.idea

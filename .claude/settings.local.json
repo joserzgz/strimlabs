@@ -10,7 +10,8 @@
       "Bash(xargs cat:*)",
       "Bash(mkdir:*)",
       "Bash(rm:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(mv:*)"
     ]
   }
 }

@@ -1,0 +1,24 @@
+# ── Stage 1: Build ──────────────────────────────
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy shared assets first (dependency of the build)
+COPY shared/ ./shared/
+
+# Install dependencies
+COPY ModBot/web/package.json ModBot/web/package-lock.json* ./ModBot/web/
+WORKDIR /app/ModBot/web
+RUN npm ci
+
+# Copy source and build
+COPY ModBot/web/ .
+RUN npm run build
+
+# ── Stage 2: Serve ──────────────────────────────
+FROM nginx:alpine
+
+COPY ModBot/web/nginx.prod.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/ModBot/web/dist /usr/share/nginx/html
+
+EXPOSE 80

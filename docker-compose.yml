@@ -17,41 +17,41 @@ services:
       retries: 10
 
   api:
-    build: ../api
+    build: ./api
     container_name: sl-api-dev
     restart: unless-stopped
     env_file: .env
     ports:
       - "8000:8000"
     volumes:
-      - ../api:/app
+      - ./api:/app
     depends_on:
       postgres:
         condition: service_healthy
 
   twitch-bot:
     build:
-      context: ./bot
+      context: ./ModBot/bot
       dockerfile: twitch/Dockerfile
     container_name: sl-twitch-bot-dev
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ./bot/twitch:/app/twitch
-      - ./bot/moderation:/app/moderation
+      - ./ModBot/bot/twitch:/app/twitch
+      - ./ModBot/bot/moderation:/app/moderation
     depends_on:
       - api
 
   discord-bot:
     build:
-      context: ./bot
+      context: ./ModBot/bot
       dockerfile: discord/Dockerfile
     container_name: sl-discord-bot-dev
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ./bot/discord:/app/discord_bot
-      - ./bot/moderation:/app/moderation
+      - ./ModBot/bot/discord:/app/discord_bot
+      - ./ModBot/bot/moderation:/app/moderation
     depends_on:
       - api
 
