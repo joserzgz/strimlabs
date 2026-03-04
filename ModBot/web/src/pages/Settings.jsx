@@ -11,9 +11,8 @@ export default function Settings({ user, setUser }) {
     api.get('/billing/status').then(setBilling).catch(() => {})
   }, [])
 
-  async function linkAccount(platform) {
-    const data = await api.get(`/auth/${platform}`)
-    window.location.href = data.url
+  function linkAccount(platform) {
+    window.location.href = `/api/auth/${platform}`
   }
 
   async function addDiscordServer() {
