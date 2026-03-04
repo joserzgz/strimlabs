@@ -2,7 +2,7 @@ PLAN_LIMITS = {
     "free": {
         "max_channels": 1,
         "messages_per_month": 1000,
-        "has_ai": False,
+        "has_ai": True,
         "has_history": False,
     },
     "pro": {

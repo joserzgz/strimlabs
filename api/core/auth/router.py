@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 import aiohttp
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 
@@ -33,7 +34,7 @@ async def twitch_redirect():
         "response_type": "code",
         "scope": "user:read:email channel:moderate",
     })
-    return {"url": f"https://id.twitch.tv/oauth2/authorize?{params}"}
+    return RedirectResponse(f"https://id.twitch.tv/oauth2/authorize?{params}")
 
 
 @router.get("/twitch/callback")
@@ -110,7 +111,7 @@ async def twitch_callback(code: str = Query(...)):
         await session.commit()
 
         jwt_token = create_jwt(user.id)
-    return {"redirect": f"{FRONTEND_URL}/dashboard?token={jwt_token}"}
+    return RedirectResponse(f"{FRONTEND_URL}/dashboard?token={jwt_token}")
 
 
 # ── Discord OAuth ────────────────────────────────────────────
@@ -126,7 +127,7 @@ async def discord_redirect():
         "response_type": "code",
         "scope": "identify email",
     })
-    return {"url": f"https://discord.com/oauth2/authorize?{params}"}
+    return RedirectResponse(f"https://discord.com/oauth2/authorize?{params}")
 
 
 @router.get("/discord/callback")
@@ -202,7 +203,7 @@ async def discord_callback(code: str = Query(...)):
         await session.commit()
 
         jwt_token = create_jwt(user.id)
-    return {"redirect": f"{FRONTEND_URL}/dashboard?token={jwt_token}"}
+    return RedirectResponse(f"{FRONTEND_URL}/dashboard?token={jwt_token}")
 
 
 # ── Me & Admin ───────────────────────────────────────────────

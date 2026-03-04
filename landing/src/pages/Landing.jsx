@@ -364,7 +364,7 @@ export default function Landing() {
                 <li><Icon name="check" size={16}/> Blacklist + Regex</li>
                 <li><Icon name="check" size={16}/> Dashboard</li>
                 <li><Icon name="check" size={16}/> 1,000 msgs/mes</li>
-                <li className="pricing-no"><Icon name="x" size={16}/> IA Perspective</li>
+                <li><Icon name="check" size={16}/> IA Perspective API</li>
                 <li className="pricing-no"><Icon name="x" size={16}/> Historial</li>
               </ul>
               <a href="https://app.strimlabs.com/api/auth/twitch" className="btn btn--ghost btn--full">Empezar gratis</a>
