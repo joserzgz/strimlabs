@@ -21,6 +21,7 @@ class Channel(Base):
     mod_action = Column(String(20), default="timeout")
     timeout_seconds = Column(Integer, default=600)
     toxicity_threshold = Column(Float, default=0.8)
+    ai_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", backref="channels")

@@ -43,6 +43,7 @@ class TwitchBotManager:
                     mod_action=ch.get("mod_action", "timeout"),
                     timeout_seconds=ch.get("timeout_seconds", 600),
                     toxicity_threshold=ch.get("toxicity_threshold", 0.8),
+                    ai_enabled=ch.get("ai_enabled", True),
                 )
                 self.channels[name] = bot
                 channels_to_join.append(name)

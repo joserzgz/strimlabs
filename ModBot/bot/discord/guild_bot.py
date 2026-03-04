@@ -11,6 +11,7 @@ class DiscordGuildBot:
     mod_action: str = "timeout"
     timeout_seconds: int = 600
     toxicity_threshold: float = 0.8
+    ai_enabled: bool = True
     monitored_channel_ids: set[str] | None = None  # None = all text channels
     blacklist_patterns: list[str] = field(default_factory=list)
     compiled_blacklist: re.Pattern | None = field(default=None, repr=False)
@@ -25,5 +26,6 @@ class DiscordGuildBot:
         self.mod_action = data.get("mod_action", self.mod_action)
         self.timeout_seconds = data.get("timeout_seconds", self.timeout_seconds)
         self.toxicity_threshold = data.get("toxicity_threshold", self.toxicity_threshold)
+        self.ai_enabled = data.get("ai_enabled", self.ai_enabled)
         ids = data.get("discord_channel_ids")
         self.monitored_channel_ids = set(ids) if ids else None

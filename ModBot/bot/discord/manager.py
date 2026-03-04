@@ -45,6 +45,7 @@ class DiscordBotManager:
                     mod_action=ch.get("mod_action", "timeout"),
                     timeout_seconds=ch.get("timeout_seconds", 600),
                     toxicity_threshold=ch.get("toxicity_threshold", 0.8),
+                    ai_enabled=ch.get("ai_enabled", True),
                     monitored_channel_ids=monitored,
                 )
                 self.guilds[guild_id] = bot

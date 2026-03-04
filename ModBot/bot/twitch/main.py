@@ -80,10 +80,11 @@ class ModBot(commands.Bot):
             return
 
         # Layer 2: Perspective API
-        flagged, score = await check_perspective_api(text, bot.toxicity_threshold)
-        if flagged:
-            await self._take_action(message, bot, "toxicity", f"score={score:.2f}", score)
-            return
+        if bot.ai_enabled:
+            flagged, score = await check_perspective_api(text, bot.toxicity_threshold)
+            if flagged:
+                await self._take_action(message, bot, "toxicity", f"score={score:.2f}", score)
+                return
 
     async def _take_action(self, message, bot, reason_type, reason_detail, score=None):
         author = message.author.name

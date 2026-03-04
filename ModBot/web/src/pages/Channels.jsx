@@ -123,14 +123,24 @@ export default function Channels() {
               )}
 
               <div className="form-group" style={{ marginBottom: 12 }}>
-                <label className="form-label text-sm">Umbral de toxicidad IA ({ch.toxicity_threshold})</label>
-                <input type="range" min="0.1" max="1" step="0.05" value={ch.toxicity_threshold}
-                  onChange={e => updateChannel(ch.id, 'toxicity_threshold', parseFloat(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--cyan)' }} />
-                <div className="flex justify-between text-sm text-muted" style={{ fontSize: 11 }}>
-                  <span>Sensible (0.1)</span><span>Permisivo (1.0)</span>
-                </div>
+                <label className="form-label text-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={ch.ai_enabled} onChange={() => updateChannel(ch.id, 'ai_enabled', !ch.ai_enabled)}
+                    style={{ accentColor: 'var(--cyan)', width: 16, height: 16 }} />
+                  Moderación IA
+                </label>
               </div>
+
+              {ch.ai_enabled && (
+                <div className="form-group" style={{ marginBottom: 12 }}>
+                  <label className="form-label text-sm">Umbral de toxicidad ({ch.toxicity_threshold})</label>
+                  <input type="range" min="0.1" max="1" step="0.05" value={ch.toxicity_threshold}
+                    onChange={e => updateChannel(ch.id, 'toxicity_threshold', parseFloat(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--cyan)' }} />
+                  <div className="flex justify-between text-sm text-muted" style={{ fontSize: 11 }}>
+                    <span>Sensible (0.1)</span><span>Permisivo (1.0)</span>
+                  </div>
+                </div>
+              )}
 
               <button className={`btn btn-sm ${ch.is_active ? 'btn-outline' : 'btn-primary'}`} onClick={() => toggleActive(ch)}>
                 {ch.is_active ? 'Desactivar' : 'Activar'}

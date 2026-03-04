@@ -33,6 +33,7 @@ class ChannelUpdate(BaseModel):
     mod_action: str | None = None
     timeout_seconds: int | None = None
     toxicity_threshold: float | None = None
+    ai_enabled: bool | None = None
     discord_channel_ids: list[str] | None = None
 
 
@@ -227,5 +228,6 @@ def _channel_dict(c: Channel) -> dict:
         "mod_action": c.mod_action,
         "timeout_seconds": c.timeout_seconds,
         "toxicity_threshold": c.toxicity_threshold,
+        "ai_enabled": c.ai_enabled,
         "created_at": c.created_at.isoformat() if c.created_at else None,
     }

@@ -79,10 +79,11 @@ async def on_message(message: discord.Message):
         return
 
     # Layer 2: Perspective API
-    flagged, score = await check_perspective_api(text, bot.toxicity_threshold)
-    if flagged:
-        await take_action(message, bot, "toxicity", f"score={score:.2f}", score)
-        return
+    if bot.ai_enabled:
+        flagged, score = await check_perspective_api(text, bot.toxicity_threshold)
+        if flagged:
+            await take_action(message, bot, "toxicity", f"score={score:.2f}", score)
+            return
 
 
 async def take_action(message: discord.Message, bot, reason_type: str, reason_detail: str, score=None):

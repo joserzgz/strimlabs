@@ -10,6 +10,7 @@ class TwitchChannelBot:
     mod_action: str = "timeout"
     timeout_seconds: int = 600
     toxicity_threshold: float = 0.8
+    ai_enabled: bool = True
     blacklist_patterns: list[str] = field(default_factory=list)
     compiled_blacklist: re.Pattern | None = field(default=None, repr=False)
 
@@ -18,3 +19,4 @@ class TwitchChannelBot:
         self.mod_action = data.get("mod_action", self.mod_action)
         self.timeout_seconds = data.get("timeout_seconds", self.timeout_seconds)
         self.toxicity_threshold = data.get("toxicity_threshold", self.toxicity_threshold)
+        self.ai_enabled = data.get("ai_enabled", self.ai_enabled)
