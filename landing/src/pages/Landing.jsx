@@ -234,7 +234,7 @@ export default function Landing() {
               <Icon name="discord" size={16}/> Discord
             </a>
           </div>
-          <a href="https://app.strimlabs.com/api/auth/twitch" className="btn btn--primary nav-cta">Empezar gratis</a>
+          <a href="https://app.strimlabs.com" className="btn btn--primary nav-cta">Empezar gratis</a>
           <button className="nav-burger" onClick={() => setMobileNav(!mobileNav)} aria-label="Menu">
             <Icon name={mobileNav ? 'close' : 'menu'} size={24}/>
           </button>
@@ -367,7 +367,7 @@ export default function Landing() {
                 <li><Icon name="check" size={16}/> IA Perspective API</li>
                 <li className="pricing-no"><Icon name="x" size={16}/> Historial</li>
               </ul>
-              <a href="https://app.strimlabs.com/api/auth/twitch" className="btn btn--ghost btn--full">Empezar gratis</a>
+              <a href="https://app.strimlabs.com" className="btn btn--ghost btn--full">Empezar gratis</a>
             </div>
             <div className="pricing-card pricing-card--pro">
               <span className="pricing-popular">Popular</span>
@@ -382,7 +382,7 @@ export default function Landing() {
                 <li><Icon name="check" size={16}/> IA Perspective API</li>
                 <li><Icon name="check" size={16}/> Historial completo</li>
               </ul>
-              <a href="https://app.strimlabs.com/api/auth/twitch" className="btn btn--primary btn--full">
+              <a href="https://app.strimlabs.com" className="btn btn--primary btn--full">
                 <Icon name="twitch" size={18}/> Conectar con Twitch
               </a>
             </div>
