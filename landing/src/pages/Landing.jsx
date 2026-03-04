@@ -383,7 +383,7 @@ export default function Landing() {
                 <li><Icon name="check" size={16}/> Historial completo</li>
               </ul>
               <a href="https://app.strimlabs.com" className="btn btn--primary btn--full">
-                <Icon name="twitch" size={18}/> Conectar con Twitch
+                Comenzar con Pro
               </a>
             </div>
           </div>
