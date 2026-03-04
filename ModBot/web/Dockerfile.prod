@@ -9,7 +9,7 @@ COPY shared/ ./shared/
 # Install dependencies
 COPY ModBot/web/package.json ModBot/web/package-lock.json* ./ModBot/web/
 WORKDIR /app/ModBot/web
-RUN npm ci
+RUN npm install
 
 # Copy source and build
 COPY ModBot/web/ .
