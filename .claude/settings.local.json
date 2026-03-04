@@ -11,7 +11,10 @@
       "Bash(mkdir:*)",
       "Bash(rm:*)",
       "Bash(python:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(pip show fastapi pydantic)",
+      "Bash(/c/Python312/python.exe -c \"import fastapi; print\\(fastapi.__version__\\)\")",
+      "Bash(/c/Python312/python.exe -m pytest tests/ -v --tb=short)"
     ]
   }
 }

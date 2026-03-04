@@ -152,7 +152,10 @@ async def check_quota(channel_id: int):
         now = datetime.now(timezone.utc)
 
         # Reset monthly counter if needed
-        if user.messages_reset_at and (now - user.messages_reset_at).days >= 30:
+        reset_at = user.messages_reset_at
+        if reset_at and reset_at.tzinfo is None:
+            reset_at = reset_at.replace(tzinfo=timezone.utc)
+        if reset_at and (now - reset_at).days >= 30:
             user.messages_this_month = 0
             user.messages_reset_at = now
 

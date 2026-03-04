@@ -44,7 +44,7 @@ class BlacklistEntry(Base):
 class ModActionLog(Base):
     __tablename__ = "mod_action_logs"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
     channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
     username = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
