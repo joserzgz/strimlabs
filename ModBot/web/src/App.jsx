@@ -7,12 +7,12 @@ import Blacklist from './pages/Blacklist'
 import History from './pages/History'
 import Stats from './pages/Stats'
 import Settings from './pages/Settings'
-import { LayoutDashboard, Radio, ShieldBan, Clock, BarChart3, Settings as SettingsIcon, LogOut } from 'lucide-react'
+import { LayoutDashboard, Radio, ShieldOff, Clock, BarChart3, Settings as SettingsIcon, LogOut } from 'lucide-react'
 
 const PAGES = {
   dashboard: { label: 'Dashboard', icon: LayoutDashboard, component: Dashboard },
   channels:  { label: 'Channels',  icon: Radio,           component: Channels },
-  blacklist: { label: 'Blacklist',  icon: ShieldBan,       component: Blacklist },
+  blacklist: { label: 'Blacklist',  icon: ShieldOff,       component: Blacklist },
   history:   { label: 'History',    icon: Clock,           component: History },
   stats:     { label: 'Stats',      icon: BarChart3,       component: Stats },
   settings:  { label: 'Settings',   icon: SettingsIcon,    component: Settings },
