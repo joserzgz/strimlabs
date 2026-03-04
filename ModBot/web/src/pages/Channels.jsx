@@ -43,6 +43,11 @@ export default function Channels() {
     load()
   }
 
+  async function updateChannel(id, field, value) {
+    await api.patch(`/channels/me/${id}`, { [field]: value })
+    load()
+  }
+
   return (
     <>
       <div className="flex items-center justify-between mb-24">
@@ -98,10 +103,35 @@ export default function Channels() {
                   <Trash2 size={14} />
                 </button>
               </div>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>{ch.channel_name || ch.discord_guild_id}</div>
-              <div className="text-sm text-muted mb-16">
-                Acción: {ch.mod_action} · Threshold: {ch.toxicity_threshold}
+              <div style={{ fontWeight: 600, marginBottom: 12 }}>{ch.channel_name || ch.discord_guild_id}</div>
+
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label className="form-label text-sm">Acción de moderación</label>
+                <select className="input" value={ch.mod_action} onChange={e => updateChannel(ch.id, 'mod_action', e.target.value)}>
+                  <option value="timeout">Timeout</option>
+                  <option value="ban">Ban</option>
+                  <option value="delete">Eliminar mensaje</option>
+                </select>
               </div>
+
+              {ch.mod_action === 'timeout' && (
+                <div className="form-group" style={{ marginBottom: 12 }}>
+                  <label className="form-label text-sm">Duración timeout (segundos)</label>
+                  <input className="input" type="number" min="1" max="604800" value={ch.timeout_seconds}
+                    onChange={e => updateChannel(ch.id, 'timeout_seconds', parseInt(e.target.value) || 60)} />
+                </div>
+              )}
+
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label className="form-label text-sm">Umbral de toxicidad IA ({ch.toxicity_threshold})</label>
+                <input type="range" min="0.1" max="1" step="0.05" value={ch.toxicity_threshold}
+                  onChange={e => updateChannel(ch.id, 'toxicity_threshold', parseFloat(e.target.value))}
+                  style={{ width: '100%', accentColor: 'var(--cyan)' }} />
+                <div className="flex justify-between text-sm text-muted" style={{ fontSize: 11 }}>
+                  <span>Sensible (0.1)</span><span>Permisivo (1.0)</span>
+                </div>
+              </div>
+
               <button className={`btn btn-sm ${ch.is_active ? 'btn-outline' : 'btn-primary'}`} onClick={() => toggleActive(ch)}>
                 {ch.is_active ? 'Desactivar' : 'Activar'}
               </button>
