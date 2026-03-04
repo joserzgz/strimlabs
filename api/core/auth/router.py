@@ -119,6 +119,16 @@ async def twitch_callback(code: str = Query(...)):
 DISCORD_API = "https://discord.com/api/v10"
 
 
+@router.get("/discord/bot")
+async def discord_bot_invite():
+    params = urlencode({
+        "client_id": DISCORD_CLIENT_ID,
+        "permissions": "1099511635974",
+        "scope": "bot",
+    })
+    return {"url": f"https://discord.com/oauth2/authorize?{params}"}
+
+
 @router.get("/discord")
 async def discord_redirect():
     params = urlencode({
